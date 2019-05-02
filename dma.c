@@ -6,12 +6,11 @@ static uint8_t g_data_desti[4*ARRAY_SIZE]; //defines destination data space
 
 void DMA0_IRQHandler(void)
 {
-
 	uint8_t i;
 
 	DMA0->INT = DMA_CH0;
 
-	for ( i = 0; i < ARRAY_SIZE; ++i)
+	for (i = 0; i < ARRAY_SIZE; ++i)
 	{
 		printf("%d,",g_data_desti[i]);
 	}
@@ -29,12 +28,12 @@ void DMA_init(void)
 {
 	DMAMUX_set_channel_operation_mode(DMA_0, PortC_Signal, Normal);
 	DMA_enable_request(DMA_0, ERQ_0);
-	DMA_set_source((uint32_t)&g_data_source[0], 1, -6);
+	DMA_set_source((uint32_t)&g_data_source[0], 1, 0);
 	DMA_set_destination((uint32_t)&g_data_desti[0], 1, 0);
 	DMA_set_citer_biter(NUM_STEPS);
-	DMA_set_transfer_size(8);
-	DMA_set_attr(0);
-	DMA_set_EOML();
+	DMA_set_transfer_size(1);
+	DMA_TCD_ATTR(0);
+	DMA_enable_interrupt_EOML();
 }
 
 void DMA_set_transfer_size(uint8_t transfer_size)
@@ -42,13 +41,36 @@ void DMA_set_transfer_size(uint8_t transfer_size)
 	DMA0->TCD[0].NBYTES_MLNO = transfer_size;/*byte number*/
 }
 
-void DMA_set_attr(uint8_t attr_val)
+void DMA_TCD_ATTR(uint8_t attr_val)
 {
+	//TCD Transfer Attributes
+	//void DMA_set_attr(boolean_t SMOD, uint8_t SSIZE, uint8_t DMOD, uint8_t DSIZE)
+    /* (15-11): SMOD (Source Address Modulo) DMA_ATTR_SMOD_MASK
+     *  = 0 -> SMOD Disabled
+     * != 0 -> Defines a specific address range (used for circular queues)
+     */
+
+    /* (10-8): SSIZE (Source Data Transfer Size) DMA_ATTR_SSIZE_SHIFT;  DMA_ATTR_SSIZE(x)
+     * 000 -> 8-bit
+     * 001 -> 16-bit
+     * 010 -> 32-bit
+     * 011 -> reserved
+     * 100 -> 16-byte
+     * 101 -> 32-byte
+     * 110 -> reserved
+     * 111 -> reserved
+     */
+
+	// DMA_ATTR_DMOD_MASK ; DMA_ATTR_DMOD(x)
+
+    // DMA_ATTR_DSIZE_MASK ; DMA_ATTR_DSIZE(x)
+
 	DMA0->TCD[0].ATTR = attr_val;
 }
 
-void DMA_set_EOML(void)
+void DMA_enable_interrupt_EOML(void)
 {
+	/* Enable interrupt when major iteration count completes */
 	DMA0->TCD[0].CSR = DMA_CSR_INTMAJOR_MASK;/*The end-of-major loop interrupt is enabled*/
 }
 
